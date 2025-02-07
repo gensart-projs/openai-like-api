@@ -2,6 +2,7 @@ const express = require('express');
 const { validateApiKey } = require('./middleware/auth');
 const { limiter, securityHeaders, validateBodySize } = require('./middleware/security');
 const apiRoutes = require('./routes/api');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,8 +18,14 @@ app.use(validateBodySize('100kb'));
 // Use authentication middleware for all /v1 routes
 app.use('/v1', validateApiKey);
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Mount API routes under /v1
 app.use('/v1', apiRoutes);
+
+app.get('/chat', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
