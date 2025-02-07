@@ -12,11 +12,8 @@ app.use(securityHeaders);
 app.use(limiter);
 
 // Body parsing middleware with size validation
-app.use(express.json({ limit: '100kb' }));
-app.use(validateBodySize('100kb'));
-
-// Use authentication middleware for all /v1 routes
-app.use('/v1', validateApiKey);
+app.use(express.json({ limit: '1mb' }));
+app.use(validateBodySize('1mb'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 

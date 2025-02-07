@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const bytes = require('bytes');
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -19,10 +20,10 @@ const securityHeaders = helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            styleSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "*"],
             fontSrc: ["'self'"],
             objectSrc: ["'none'"],
             mediaSrc: ["'self'"],
@@ -43,9 +44,12 @@ const securityHeaders = helmet({
 });
 
 // Validate request body size
-const validateBodySize = (maxSize = '100kb') => {
+const validateBodySize = (maxSize = '1mb') => {
+    const maxBytes = bytes.parse(maxSize);
+    
     return (req, res, next) => {
-        if (req.headers['content-length'] > maxSize) {
+        const contentLength = parseInt(req.headers['content-length'] || 0);
+        if (contentLength > maxBytes) {
             return res.status(413).json({
                 error: {
                     message: "Request body too large",

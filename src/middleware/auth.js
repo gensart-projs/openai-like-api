@@ -1,7 +1,10 @@
 const validateApiKey = (req, res, next) => {
     const authHeader = req.header('Authorization');
+    console.log(`[Auth Debug] Request to ${req.method} ${req.path}`);
+    console.log(`[Auth Debug] Auth header present: ${!!authHeader}`);
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('[Auth Debug] Missing or invalid Authorization header format');
         return res.status(401).json({
             error: {
                 message: "Authentication failed. Please provide a valid API key.",
@@ -12,9 +15,10 @@ const validateApiKey = (req, res, next) => {
     }
 
     const apiKey = authHeader.split(' ')[1];
+    console.log(`[Auth Debug] Received API key length: ${apiKey.length}`);
     
     if (!process.env.API_KEY) {
-        console.error('API_KEY environment variable is not set');
+        console.error('[Auth Debug] API_KEY environment variable is not set');
         return res.status(500).json({
             error: {
                 message: "Internal server error",
