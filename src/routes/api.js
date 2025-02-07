@@ -81,23 +81,70 @@ router.post('/chat/completions', async (req, res) => {
             }));
         }
 
-        console.log('[Chat Debug] Forwarding request to n8n webhook');
-        const response = await axios.post(process.env.CHAT_WEBHOOK_URL, {
-            ...req.body,
-            webhook_type: "chat"
-        });
+        console.log('[Chat Debug] Forwarding request to n8n webhook:', process.env.CHAT_WEBHOOK_URL);
+        try {
+            console.log('[Chat Debug] Attempting n8n webhook request...');
+            let response;
+            try {
+                response = await axios.post(process.env.CHAT_WEBHOOK_URL, {
+                    ...req.body,
+                    webhook_type: "chat"
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 30000, // 30 seconds to account for longer processing times
+                    validateStatus: false,
+                    maxRedirects: 0
+                });
+                console.log('[Chat Debug] N8N webhook responded with status:', response.status);
+            } catch (error) {
+                if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                    console.log('[Chat Debug] Request timed out, returning workflow confirmation');
+                    // Use the formatter for consistent response format
+                    return res.status(202).json(formatChatResponse({
+                        model: req.body.model,
+                        content: "Your message has been received and the workflow has started processing. This may take up to 25 seconds to complete. Please check back shortly for the full response."
+                    }));
+                }
+                throw error;
+            }
+            console.log('[Chat Debug] N8N response data:', JSON.stringify(response.data).substring(0, 200));
 
-        console.log('[Chat Debug] Successfully received response from n8n');
-        res.json(formatChatResponse(response.data));
-    } catch (error) {
-        console.error('[Chat Debug] Error:', error.message);
-        if (error.response) {
-            console.error('[Chat Debug] Response status:', error.response.status);
-            console.error('[Chat Debug] Response data:', error.response.data);
+            if (response.status !== 200) {
+                throw new Error(`N8N webhook returned status ${response.status}`);
+            }
+
+            console.log('[Chat Debug] Processing n8n response');
+            res.json(formatChatResponse(response.data));
+        } catch (webhookError) {
+            console.error('[Chat Debug] Webhook Error:', webhookError.message);
+            if (webhookError.code === 'ECONNREFUSED') {
+                res.status(503).json(formatErrorResponse({
+                    message: "N8N webhook service is unavailable",
+                    type: "api_error",
+                    code: "service_unavailable"
+                }));
+            } else if (webhookError.code === 'ETIMEDOUT') {
+                res.status(504).json(formatErrorResponse({
+                    message: "N8N webhook request timed out",
+                    type: "api_error",
+                    code: "gateway_timeout"
+                }));
+            } else {
+                res.status(502).json(formatErrorResponse({
+                    message: "Error communicating with N8N webhook",
+                    type: "api_error",
+                    code: "bad_gateway"
+                }));
+            }
         }
+    } catch (error) {
+        console.error('[Chat Debug] General Error:', error.message);
         res.status(500).json(formatErrorResponse({
-            message: "Error processing chat completion request",
-            type: "api_error"
+            message: "Internal server error",
+            type: "api_error",
+            code: "internal_error"
         }));
     }
 });
@@ -113,17 +160,70 @@ router.post('/completions', async (req, res) => {
             }));
         }
 
-        const response = await axios.post(process.env.COMPLETION_WEBHOOK_URL, {
-            ...req.body,
-            webhook_type: "completion"
-        });
+        console.log('[Completion Debug] Forwarding request to n8n webhook:', process.env.COMPLETION_WEBHOOK_URL);
+        try {
+            console.log('[Completion Debug] Attempting n8n webhook request...');
+            let response;
+            try {
+                response = await axios.post(process.env.COMPLETION_WEBHOOK_URL, {
+                    ...req.body,
+                    webhook_type: "completion"
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 30000, // 30 seconds to account for longer processing times
+                    validateStatus: false,
+                    maxRedirects: 0
+                });
+                console.log('[Completion Debug] N8N webhook responded with status:', response.status);
+            } catch (error) {
+                if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+                    console.log('[Completion Debug] Request timed out, returning workflow confirmation');
+                    return res.status(202).json(formatCompletionResponse({
+                        model: req.body.model,
+                        content: "Your prompt has been received and the workflow has started processing. This may take up to 25 seconds to complete. Please check back shortly for the full response."
+                    }));
+                }
+                throw error;
+            }
 
-        res.json(formatCompletionResponse(response.data));
+            console.log('[Completion Debug] N8N response data:', JSON.stringify(response.data).substring(0, 200));
+
+            if (response.status !== 200) {
+                throw new Error(`N8N webhook returned status ${response.status}`);
+            }
+
+            console.log('[Completion Debug] Processing n8n response');
+            res.json(formatCompletionResponse(response.data));
+        } catch (webhookError) {
+            console.error('[Completion Debug] Webhook Error:', webhookError.message);
+            if (webhookError.code === 'ECONNREFUSED') {
+                res.status(503).json(formatErrorResponse({
+                    message: "N8N webhook service is unavailable",
+                    type: "api_error",
+                    code: "service_unavailable"
+                }));
+            } else if (webhookError.code === 'ETIMEDOUT') {
+                res.status(504).json(formatErrorResponse({
+                    message: "N8N webhook request timed out",
+                    type: "api_error",
+                    code: "gateway_timeout"
+                }));
+            } else {
+                res.status(502).json(formatErrorResponse({
+                    message: "Error communicating with N8N webhook",
+                    type: "api_error",
+                    code: "bad_gateway"
+                }));
+            }
+        }
     } catch (error) {
-        console.error('Completion error:', error);
+        console.error('[Completion Debug] General Error:', error.message);
         res.status(500).json(formatErrorResponse({
-            message: "Error processing completion request",
-            type: "api_error"
+            message: "Internal server error",
+            type: "api_error",
+            code: "internal_error"
         }));
     }
 });
