@@ -4,7 +4,7 @@ const formatChatResponse = (n8nResponse) => {
         id: `chatcmpl-${Math.random().toString(36).substring(2, 12)}`,
         object: "chat.completion",
         created: timestamp,
-        model: n8nResponse.model || "gpt-3.5-turbo",
+        model: n8nResponse.model, // Model ID deve vir do n8n response
         choices: [{
             index: 0,
             message: {
@@ -30,7 +30,7 @@ const formatCompletionResponse = (n8nResponse) => {
         id: `cmpl-${Math.random().toString(36).substring(2, 12)}`,
         object: "text_completion",
         created: timestamp,
-        model: n8nResponse.model || "gpt-3.5-turbo",
+        model: n8nResponse.model, // Model ID deve vir do n8n response
         choices: [{
             text: n8nResponse.content || n8nResponse.response || n8nResponse.choices?.[0]?.text || "",
             index: 0,

@@ -1,46 +1,17 @@
-const validateApiKey = (req, res, next) => {
-    const authHeader = req.header('Authorization');
-    console.log(`[Auth Debug] Request to ${req.method} ${req.path}`);
-    console.log(`[Auth Debug] Auth header present: ${!!authHeader}`);
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log('[Auth Debug] Missing or invalid Authorization header format');
-        return res.status(401).json({
-            error: {
-                message: "Authentication failed. Please provide a valid API key.",
-                type: "invalid_request_error",
-                code: "invalid_api_key"
-            }
-        });
-    }
+const jwt = require('jsonwebtoken');
 
-    const apiKey = authHeader.split(' ')[1];
-    console.log(`[Auth Debug] Received API key length: ${apiKey.length}`);
-    
-    if (!process.env.API_KEY) {
-        console.error('[Auth Debug] API_KEY environment variable is not set');
-        return res.status(500).json({
-            error: {
-                message: "Internal server error",
-                type: "server_error",
-                code: "configuration_error"
-            }
-        });
+const authenticate = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(401).send('Access denied. No token provided.');
     }
-
-    if (apiKey !== process.env.API_KEY) {
-        return res.status(401).json({
-            error: {
-                message: "Invalid API key provided.",
-                type: "invalid_request_error",
-                code: "invalid_api_key"
-            }
-        });
-    }
-
-    // Store the validated API key in the request object
-    req.apiKey = apiKey;
-    next();
+    jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+        if (err) {
+            return res.status(403).send('Invalid token.');
+        }
+        req.user = decoded; // Attach user info to request
+        next();
+    });
 };
 
-module.exports = { validateApiKey };
+module.exports = authenticate;

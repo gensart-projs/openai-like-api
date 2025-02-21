@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Gerenciamento de Modelos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Painel Administrativo</a>
+            <div class="navbar-text text-white" id="userInfo">
+                Usuário: <span id="username"></span>
+                <button class="btn btn-sm btn-outline-light ms-3" id="logoutBtn">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Form -->
+    <div class="container mt-5" id="loginContainer">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Login Administrativo</div>
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginUsername" class="form-label">Usuário</label>
+                                <input type="text" class="form-control" id="loginUsername" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Senha</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Entrar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mt-4" id="mainContent" style="display: none;">
+        <!-- Model List -->
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Modelos Cadastrados</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modelModal">
+                    Novo Modelo
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Slug</th>
+                        <th>Nome</th>
+                        <th>Descrição</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="modelList">
+                    <!-- Models will be listed here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Model Modal -->
+        <div class="modal fade" id="modelModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modelModalTitle">Novo Modelo</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="modelForm">
+                            <input type="hidden" id="modelId">
+                            <div class="mb-3">
+                                <label for="modelSlug" class="form-label">Slug</label>
+                                <input type="text" class="form-control" id="modelSlug" required
+                                    pattern="^[a-z0-9-]+$" title="Apenas letras minúsculas, números e hífens">
+                                <div class="form-text">Identificador único do modelo (ex: gpt-custom-1)</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="modelName" class="form-label">Nome</label>
+                                <input type="text" class="form-control" id="modelName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="modelDescription" class="form-label">Descrição</label>
+                                <textarea class="form-control" id="modelDescription" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="chatWebhookUrl" class="form-label">URL do Webhook de Chat</label>
+                                <input type="url" class="form-control" id="chatWebhookUrl" required>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" 
+                                    onclick="testWebhook('chat')">Testar Webhook</button>
+                            </div>
+                            <div class="mb-3">
+                                <label for="completionsWebhookUrl" class="form-label">URL do Webhook de Completions</label>
+                                <input type="url" class="form-control" id="completionsWebhookUrl" required>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                    onclick="testWebhook('completions')">Testar Webhook</button>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="modelActive" checked>
+                                <label class="form-check-label" for="modelActive">Ativo</label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="saveModel()">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Result Modal -->
+        <div class="modal fade" id="testResultModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Resultado do Teste</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <pre id="testResult"></pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
